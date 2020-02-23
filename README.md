@@ -5,6 +5,8 @@ exp for CNVD-2020-10487(CVE-2020-1938)
 
 tomcat ajp协议任意属性设置导致的文件读取和文件执行。
 
+[漏洞分析](https://www.00theway.org/2020/02/22/ajp-shooter-from-source-code-to-exploit/)
+
 # 代码仅供安全测试，请勿用于非法用途,造成的后果使用者负责与本人无关！！！
 
 
