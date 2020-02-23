@@ -20,7 +20,8 @@ python3 ajpShooter.py -h
                                                 00theway,just for test
 
 usage: ajpShooter.py [-h] [--ajp-ip AJP_IP] [-H HEADER]
-                     [-X {GET,POST,HEAD,OPTIONS,PROPFIND}] [-d DATA] [--debug]
+                     [-X {GET,POST,HEAD,OPTIONS,PROPFIND}] [-d DATA]
+                     [-o OUT_FILE] [--debug]
                      url ajp_port target_file {read,eval}
 
 positional arguments:
@@ -39,6 +40,8 @@ optional arguments:
   -X {GET,POST,HEAD,OPTIONS,PROPFIND}
                         Sets the method (default: GET).
   -d DATA, --data DATA  The data to POST
+  -o OUT_FILE, --out-file OUT_FILE
+                        write response to file
   --debug
 ```
 
@@ -49,3 +52,7 @@ read file
 execute file
 
 ![](ajp-execute.png)
+
+save file
+
+![](ajp-save.png)
