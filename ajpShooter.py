@@ -180,8 +180,9 @@ class ajpRequest(object):
 
 
 class ajpResponse(object):
-    def __init__(self, s):
+    def __init__(self, s, out_file):
         self.sock = s
+        self.out_file = out_file
         self.body_start = False
         self.common_response_headers = {
             b'\x01': b'Content-Type',
@@ -196,6 +197,11 @@ class ajpResponse(object):
             b'\x0a': b'Status',
             b'\x0b': b'WWW-Authenticate',
         }
+        if not self.out_file:
+            self.out_file = False
+        else:
+            log('*', 'store response in %s' % self.out_file)
+            self.out = open(self.out_file, 'wb')
 
     def parse_response(self):
         log('debug', 'start')
@@ -247,7 +253,12 @@ class ajpResponse(object):
                 self.sock.recv(1)
 
             header_value_bytes = self.read_string()
-            log('<', header_key_bytes.decode('utf8'), header_value_bytes.decode('utf8'))
+            try:
+                header_key_bytes = header_key_bytes.decode('utf8')
+                header_value_bytes = header_value_bytes.decode('utf8')
+            except:
+                pass
+            log('<', '%s: %s' % (header_key_bytes, header_value_bytes))
 
     def parse_send_body_chunk(self):
         if not self.body_start:
@@ -255,7 +266,15 @@ class ajpResponse(object):
             log('debug', 'start parsing body chunk')
             self.body_start = True
         chunk = self.read_string()
-        log('append', chunk.decode('utf8'))
+        if self.out_file:
+            self.out.write(chunk)
+        else:
+            try:
+                chunk = chunk.decode('utf8')
+            except:
+                pass
+
+            log('append', chunk)
 
     def parse_response_end(self):
         log('debug', 'start parsing end')
@@ -286,6 +305,7 @@ class ajpShooter(object):
         self.target_file = args.target_file
         self.shooter = args.shooter
         self.method = args.X
+        self.out_file = args.out_file
 
     def shoot(self):
         headers = self.transform_headers()
@@ -319,7 +339,7 @@ class ajpShooter(object):
         message = ajpRequest(self.requesturl, self.method, headers, attributes).make_forward_request_package()
         s.send(message)
 
-        ajpResponse(s).parse_response()
+        ajpResponse(s, self.out_file).parse_response()
 
     def transform_headers(self):
         self.headers = [] if not self.headers else self.headers
@@ -355,6 +375,7 @@ if __name__ == "__main__":
     parser.add_argument('-X', help='Sets the method (default: %(default)s).', default='GET',
                         choices=['GET', 'POST', 'HEAD', 'OPTIONS', 'PROPFIND'])
     parser.add_argument('-d', '--data', nargs=1, help='The data to POST')
+    parser.add_argument('-o', '--out-file', help='write response to file')
     parser.add_argument('--debug', action='store_true', default=False)
 
     args = parser.parse_args()
