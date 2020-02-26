@@ -12,6 +12,8 @@ debug = False
 def log(type, *args, **kwargs):
     if type == 'debug' and debug == False:
         return
+    elif type == 'append' and debug == True:
+        return
     elif type == 'append':
         kwargs['end'] = ''
         print(*args, **kwargs)
@@ -206,12 +208,10 @@ class ajpResponse(object):
     def parse_response(self):
         log('debug', 'start')
 
-        magic = self.sock.recv(2)  # first two bytes are the 'magic'
+        magic = self.recv(2)  # first two bytes are the 'magic'
         log('debug', 'magic', magic, binascii.b2a_hex(magic))
         # next two bytes are the length
-
-        len_bytes = self.sock.recv(2)
-        data_len_int = int.from_bytes(len_bytes, byteorder='big')
+        data_len_int = self.read_int(2)
 
         code_int = self.read_int(1)
         log('debug', 'code', code_int)
@@ -240,8 +240,8 @@ class ajpResponse(object):
 
         for i in range(headers_number_int):
             # header name: two cases
-            first_byte = self.sock.recv(1)
-            second_byte = self.sock.recv(1)
+            first_byte = self.recv(1)
+            second_byte = self.recv(1)
 
             if first_byte == b'\xa0':
                 header_key_bytes = self.common_response_headers[second_byte]
@@ -250,7 +250,7 @@ class ajpResponse(object):
                 header_len_int = int.from_bytes(header_len_bytes, byteorder='big')
                 header_key_bytes = self.read_bytes(header_len_int)
                 # consume the 0x00 terminator
-                self.sock.recv(1)
+                self.recv(1)
 
             header_value_bytes = self.read_string()
             try:
@@ -283,16 +283,24 @@ class ajpResponse(object):
         self.sock.close()
 
     def read_int(self, int_len):
-        return int.from_bytes(self.sock.recv(int_len), byteorder='big')
+        return int.from_bytes(self.recv(int_len), byteorder='big')
 
     def read_bytes(self, bytes_len):
-        return self.sock.recv(bytes_len)
+        return self.recv(bytes_len)
 
     def read_string(self, int_len=2):
         data_len = self.read_int(int_len)
-        data = self.sock.recv(data_len)
+        data = self.recv(data_len)
         # consume the 0x00 terminator
-        self.sock.recv(1)
+        end = self.recv(1)
+        log('debug', 'read_string read data_len:%d\ndata_len:%d\nend:%s' % (data_len, len(data), end))
+        return data
+
+    def recv(self, data_len):
+        data = self.sock.recv(data_len)
+        while len(data) < data_len:
+            log('debug', 'recv not end,wait for %d bytes' % (data_len - len(data)))
+            data += self.sock.recv(data_len - len(data))
         return data
 
 
